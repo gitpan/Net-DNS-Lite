@@ -15,6 +15,19 @@ DESCRIPTION
     This module provides a replacement function for Socket::inet_aton, with
     support for timeouts.
 
+CONFIGURATION VARIABLES
+  $Net::DNS::Lite::TIMEOUT
+    maximum time (in seconds) inet_aton will block (default: 10)
+
+  $Net::DNS::Lite::CACHE
+    if set, Net::DNS::Lite will cache the DNS responses internally using the
+    supplied cache object. The cache object should support "get", "set", and
+    "delete" functions (default: none)
+
+  $Net::DNS::Lite::CACHE_TTL
+    maximum ttl of the cached entries (in seconds). Only has effect when
+    $Net::DNS::Lite::CACHE is set.
+
 AUTHOR
     Kazuho Oku
 

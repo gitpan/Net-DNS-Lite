@@ -8,10 +8,11 @@ use warnings;
 use Carp ();
 use Exporter qw(import);
 use List::MoreUtils qw(uniq);
+use List::Util qw(min);
 use Socket qw(AF_INET SOCK_DGRAM inet_ntoa sockaddr_in unpack_sockaddr_in);
 use Time::HiRes qw(time);
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 our @EXPORT = qw();
 our @EXPORT_OK = qw(inet_aton);
@@ -100,6 +101,8 @@ our %class_id = (
 our %class_str = reverse %class_id;
 
 our $TIMEOUT = 10;
+our $CACHE;
+our $CACHE_TTL = 600;
 our $PID;
 
 sub new {
@@ -182,13 +185,8 @@ sub resolve {
 
         # advance in cname-chain
         $do_req = sub {
-            my $res = $self->request(
-                +{
-                    rd => 1,
-                    qd => [[$name, $qtype, $class]],
-                },
-                $timeout_at,
-            ) or return $do_search->();
+            my $res = $self->request($name, $qtype, $class, $timeout_at)
+                or return $do_search->();
 
             my $cname;
 
@@ -198,8 +196,9 @@ sub resolve {
                     $name eq lc $_->[0] && ($atype{"*"} || $atype{$_->[1]})
                 } @{$res->{an}};
 
-                (undef $do_search), (undef $do_req), return @rr
-                    if @rr;
+                if (@rr) {
+                    (undef $do_search), (undef $do_req), return @rr;
+                }
 
                 # see if there is a cname we can follow
                 @rr = grep {
@@ -211,7 +210,7 @@ sub resolve {
                         or return $do_search->(); # cname chain too long
 
                     $cname = 1;
-                    $name = lc $rr[0][3];
+                    $name = lc $rr[0][4];
 
                 } elsif ($cname) {
                     # follow the cname
@@ -231,12 +230,30 @@ sub resolve {
 }
 
 sub request {
-    my ($self, $req, $total_timeout_at) = @_;
+    my ($self, $name, $qtype, $class, $total_timeout_at) = @_;
+
+    my $cache = $self->{cache};
+    if (! defined $self->{cache}) {
+        $cache = $CACHE;
+    }
+    my $cache_key = "$class $qtype $name";
+
+    if ($cache) {
+        if (my $value = $cache->get($cache_key)) {
+            my ($res, $expires_at) = @$value;
+            return $res if time < $expires_at;
+            $cache->remove($cache_key);
+        }
+    }
 
     $self->_open_socket()
         if ! $self->{sock_v4} || $self->{pid} != $$;
 
-    $req->{id} = $self->_new_id();
+    my $req = {
+        id => $self->_new_id(),
+        rd => 1,
+        qd => [[$name, $qtype, $class]],
+    };
 
     my $req_pkt = dns_pack($req);
 
@@ -283,6 +300,17 @@ sub request {
             if ($res->{id} == $req->{id}) {
                 $self->_register_unusable_id($req->{id})
                     if $retry != 0;
+                if ($cache) {
+                    my $ttl = min(
+                        $self->{cache_ttl} || $CACHE_TTL,
+                        map {
+                            $_->[3]
+                        } (@{$res->{an}} ? @{$res->{an}} : @{$res->{ns}}),
+                    );
+                    $cache->set(
+                        $cache_key => [ $res, time + $ttl + 0.5 ],
+                    );
+                }
                 return $res;
             }
         }
@@ -501,6 +529,7 @@ sub _dec_rr {
       $name,
       $type_str{$rt}  || $rt,
       $class_str{$rc} || $rc,
+      $ttl,
       ($dec_rr{$rt} || sub { $_ })->(),
    ]
 }
@@ -612,9 +641,11 @@ sub inet_aton {
         $name, 'a',
         (@_ ? (timeout => $_[0]) : ()),
     );
-    for my $rec (@rr) {
-        my $address = parse_ipv4($rec->[3]);
+    while (@rr) {
+        my $idx = int rand @rr;
+        my $address = parse_ipv4($rr[$idx][4]);
         return $address if defined $address;
+        splice @rr, $idx, 1;
     }
     return undef;
 }
@@ -640,6 +671,20 @@ Net::DNS::Lite - a pure-perl DNS resolver with support for timeout
 =head1 DESCRIPTION
 
 This module provides a replacement function for L<Socket::inet_aton>, with support for timeouts.
+
+=head1 CONFIGURATION VARIABLES
+
+=head2 $Net::DNS::Lite::TIMEOUT
+
+maximum time (in seconds) inet_aton will block (default: 10)
+
+=head2 $Net::DNS::Lite::CACHE
+
+if set, Net::DNS::Lite will cache the DNS responses internally using the supplied cache object.  The cache object should support C<get>, C<set>, and C<delete> functions (default: none)
+
+=head2 $Net::DNS::Lite::CACHE_TTL
+
+maximum ttl of the cached entries (in seconds).  Only has effect when $Net::DNS::Lite::CACHE is set.
 
 =head1 AUTHOR
 

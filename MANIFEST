@@ -18,3 +18,4 @@ README
 t/00base.t
 t/01no_response.t
 t/02inet_aton.t
+t/03cache.t
