@@ -12,7 +12,7 @@ use List::Util qw(min);
 use Socket qw(AF_INET SOCK_DGRAM inet_ntoa sockaddr_in unpack_sockaddr_in);
 use Time::HiRes qw(time);
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 our @EXPORT = qw();
 our @EXPORT_OK = qw(inet_aton);
@@ -256,6 +256,7 @@ sub request {
     };
 
     my $req_pkt = dns_pack($req);
+    my $pkt_sent;
 
     for (my $retry = 0; $retry < @{$self->{retry}}; $retry++) {
         my ($server, $server_timeout) = @{$self->{retry}->[$retry]};
@@ -264,8 +265,12 @@ sub request {
         my $server_timeout_at = $now + $server_timeout;
         $server_timeout_at = $total_timeout_at
             if $total_timeout_at < $server_timeout_at;
+        if ($server_timeout_at <= $now) {
+            goto FAIL;
+        }
 
         # send request
+        $pkt_sent = 1;
         send(
             $self->{sock_v4}, $req_pkt, 0,
             scalar sockaddr_in(DOMAIN_PORT, $server),
@@ -317,7 +322,8 @@ sub request {
     }
 
  FAIL:
-    $self->_register_unusable_id($req->{id});
+    $self->_register_unusable_id($req->{id})
+        if $pkt_sent;
     return;
 }
 
