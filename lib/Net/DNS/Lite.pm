@@ -12,7 +12,7 @@ use List::Util qw(min);
 use Socket qw(AF_INET SOCK_DGRAM inet_ntoa sockaddr_in unpack_sockaddr_in);
 use Time::HiRes qw(time);
 
-our $VERSION = '0.09';
+our $VERSION = '0.10';
 
 our @EXPORT = qw();
 our @EXPORT_OK = qw(inet_aton);
@@ -729,7 +729,7 @@ maximum time (in seconds) inet_aton will block (default: 10)
 
 =head2 $Net::DNS::Lite::CACHE
 
-if set, Net::DNS::Lite will cache the DNS responses internally using the supplied cache object.  The cache object should support C<get>, C<set>, and C<delete> functions (default: none)
+if set, Net::DNS::Lite will cache the DNS responses internally using the supplied cache object.  The cache object should support C<get>, C<set>, and C<remove> functions (default: none)
 
 =head2 $Net::DNS::Lite::CACHE_TTL
 
