@@ -12,7 +12,7 @@ use List::Util qw(min);
 use Socket qw(AF_INET SOCK_DGRAM inet_ntoa sockaddr_in unpack_sockaddr_in);
 use Time::HiRes qw(time);
 
-our $VERSION = '0.10';
+our $VERSION = '0.11';
 
 our @EXPORT = qw();
 our @EXPORT_OK = qw(inet_aton);
@@ -138,6 +138,8 @@ sub _compile {
     $self->{server} = [
         map {
             Socket::inet_aton($_) or Carp::croak "invalid server address: $_"
+        } grep {
+          ! /:/ # ignore ipv6 address (for now)
         } grep { length($_) } uniq @{$self->{server}},
     ];
 
@@ -613,7 +615,7 @@ sub parse_ipv6 {
         ($h, $t) = (undef, $h);
     }
 
-    my @h = split /:/, $h;
+    my @h = defined $h ? (split /:/, $h) : ();
     my @t = split /:/, $t;
 
     # check for ipv4 tail

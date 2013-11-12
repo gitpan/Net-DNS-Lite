@@ -8,14 +8,12 @@ build_requires:
   Test::Requires: 0
 configure_requires:
   ExtUtils::MakeMaker: 6.59
-distribution_type: module
-dynamic_config: 1
-generated_by: 'Module::Install version 1.06'
+dynamic_config: 0
+generated_by: 'Module::Install version 1.06, CPAN::Meta::Converter version 2.132661'
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
   version: 1.4
-module_name: Net::DNS::Lite
 name: Net-DNS-Lite
 no_index:
   directory:
@@ -23,7 +21,8 @@ no_index:
     - t
 requires:
   List::MoreUtils: 0
-  perl: 5.8.1
+  perl: 5.008001
 resources:
   license: http://dev.perl.org/licenses/
-version: 0.11
+version: 0.10
+x_module_name: Net::DNS::Lite
