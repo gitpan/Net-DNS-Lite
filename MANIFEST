@@ -21,3 +21,4 @@ t/01no_response.t
 t/02inet_aton.t
 t/03cache.t
 t/04resolv_conf.t
+t/05mx.t

@@ -4,7 +4,7 @@
       "Kazuho Oku"
    ],
    "dynamic_config" : 0,
-   "generated_by" : "Module::Install version 1.06, CPAN::Meta::Converter version 2.132661",
+   "generated_by" : "Module::Install version 1.00, CPAN::Meta::Converter version 2.131560",
    "license" : [
       "perl_5"
    ],
@@ -22,14 +22,14 @@
    "prereqs" : {
       "build" : {
          "requires" : {
-            "ExtUtils::MakeMaker" : "6.59",
+            "ExtUtils::MakeMaker" : "6.42",
             "Test::More" : "0.88",
             "Test::Requires" : "0"
          }
       },
       "configure" : {
          "requires" : {
-            "ExtUtils::MakeMaker" : "6.59"
+            "ExtUtils::MakeMaker" : "6.42"
          }
       },
       "runtime" : {
@@ -43,8 +43,11 @@
    "resources" : {
       "license" : [
          "http://dev.perl.org/licenses/"
-      ]
+      ],
+      "repository" : {
+         "url" : "https://github.com/kazuho/p5-Net-DNS-Lite"
+      }
    },
-   "version" : "0.10",
+   "version" : "0.11",
    "x_module_name" : "Net::DNS::Lite"
 }
